@@ -1,0 +1,37 @@
+services:
+  meshcentral:
+    image: typhonragewind/meshcentral
+    container_name: meshcentral
+    restart: always
+    depends_on:
+      - mongodb
+    ports:
+      - "${HTTPS_PORT}:443"
+    environment:
+      - HOSTNAME=mc.erchov.ru # домен, с которого перенаправляет NPM
+      - REVERSE_PROXY=192.168.100.236 # адрес  NPM
+      - REVERSE_PROXY_TLS_PORT=443
+
+      - USE_MONGODB=true
+      - MONGO_URL=mongodb://${MESHUSER}:${MESHOASSWORD}@mongodb:27017/meshcentral?authSource=admin
+
+      - WEBRTC=true  #set to true to enable WebRTC
+
+      - BACKUPS_PW=MyAwesomePasswordPleaseChangeMe #password for the autobackup function
+      - BACKUP_INTERVAL=24 # Interval in hours for the autobackup function
+      - BACKUP_KEEP_DAYS=10 #number of days of backups the function keeps
+    volumes:
+      - ${DATA_PATH}/data:/opt/meshcentral/meshcentral-data
+      - ${DATA_PATH}/user_files:/opt/meshcentral/meshcentral-files
+      - ${DATA_PATH}/backups:/opt/meshcentral/meshcentral-backups
+
+  mongodb:
+    image: mongo:6.0
+    container_name: meshcentral-db
+    restart: always
+    environment:
+      GLIBC_TUNABLES: "glibc.pthread.rseq=0"
+      MONGO_INITDB_ROOT_USERNAME: ${MESHUSER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MESHOASSWORD}
+    volumes:
+      - ${DATA_PATH}/mongodb_data:/data/db
